@@ -24,6 +24,7 @@ OCRS v1.0 includes comprehensive support for:
 - Equipment requirements
 - Cost and economics tracking
 - Safety and allergen information
+- **HACCP (Hazard Analysis Critical Control Point) compliance**
 - Media attachments (photos/videos)
 - Recipe variations and substitutions
 - Scaling guidance
@@ -73,6 +74,8 @@ An OCRS recipe consists of the following top-level sections:
 * `equipment` – Required and optional tools
 * `cost` – Economic information
 * `safety` – Allergens, warnings, and shelf life
+* `haccp` – HACCP compliance and critical control points
+* `productionRecords` – Audit-ready batch production and quality control documentation
 * `media` – Photos and videos
 * `variations` – Recipe alternatives and substitutions
 * `scaling` – Guidelines for adjusting batch sizes
@@ -363,7 +366,605 @@ safety:
 
 ---
 
-## 13. Media Attachments (Optional)
+## 13. HACCP Compliance (Optional)
+
+HACCP (Hazard Analysis and Critical Control Points) section enables food safety compliance for commercial cheese production.
+
+```yaml
+haccp:
+  enabled: boolean
+  hazardAnalysis:
+    biologicalHazards:
+      - hazard: string
+        controlMeasure: string
+        severity: LOW | MEDIUM | HIGH | CRITICAL
+    chemicalHazards:
+      - hazard: string
+        controlMeasure: string
+        severity: LOW | MEDIUM | HIGH | CRITICAL
+    physicalHazards:
+      - hazard: string
+        controlMeasure: string
+        severity: LOW | MEDIUM | HIGH | CRITICAL
+  criticalControlPoints:
+    - ccpNumber: number
+      stepNumber: number (optional)  # Links to recipe step
+      processStep: string
+      hazard: string
+      criticalLimit:
+        parameter: TEMPERATURE | PH | TIME | WEIGHT | AW | OTHER
+        value: number | string
+        unit: string (optional)
+        operator: EQUAL | LESS_THAN | GREATER_THAN | BETWEEN | NOT_EQUAL
+        range:
+          min: number (optional)
+          max: number (optional)
+      monitoringProcedure:
+        what: string  # What to monitor
+        how: string  # How to monitor
+        frequency: string  # When/how often
+        who: string  # Who is responsible
+      correctiveActions:
+        - action: string
+          responsibility: string (optional)
+      verification:
+        method: string
+        frequency: string
+      recordKeeping:
+        formName: string (optional)
+        retentionPeriod: string  # "2 years", "indefinitely"
+        notes: string (optional)
+  prerequisitePrograms:
+    - program: string  # "Sanitation", "Pest Control", "Equipment Maintenance"
+      description: string
+      frequency: string (optional)
+  traceability:
+    lotNumberFormat: string (optional)  # "YYMMDD-BATCH-##"
+    requiredDocumentation: [string] (optional)
+    upstreamTracing: string (optional)  # Milk source tracing
+    downstreamTracing: string (optional)  # Distribution tracking
+```
+
+**Example:**
+
+```yaml
+haccp:
+  enabled: true
+  hazardAnalysis:
+    biologicalHazards:
+      - hazard: "Pathogenic bacteria (Listeria monocytogenes, E. coli O157:H7, Salmonella)"
+        controlMeasure: "Pasteurization at 72°C for 15 seconds OR sourcing pasteurized milk"
+        severity: CRITICAL
+      - hazard: "Pathogen growth during aging"
+        controlMeasure: "Maintain proper temperature (10-12°C) and monitor pH"
+        severity: HIGH
+    chemicalHazards:
+      - hazard: "Antibiotic residues in milk"
+        controlMeasure: "Source milk from approved suppliers with testing certificates"
+        severity: MEDIUM
+      - hazard: "Cleaning chemical contamination"
+        controlMeasure: "Thorough rinsing of equipment after sanitation"
+        severity: MEDIUM
+    physicalHazards:
+      - hazard: "Metal fragments from equipment"
+        controlMeasure: "Visual inspection, metal detection (if available)"
+        severity: MEDIUM
+      - hazard: "Foreign objects (hair, plastic)"
+        controlMeasure: "Personnel hygiene, covering hair, good manufacturing practices"
+        severity: LOW
+
+  criticalControlPoints:
+    - ccpNumber: 1
+      stepNumber: 1
+      processStep: "Milk Pasteurization (or receipt of pasteurized milk)"
+      hazard: "Pathogenic bacteria survival"
+      criticalLimit:
+        parameter: TEMPERATURE
+        value: 72
+        unit: "°C"
+        operator: GREATER_THAN
+        range:
+          min: 72
+      monitoringProcedure:
+        what: "Pasteurization temperature"
+        how: "Calibrated thermometer, continuous monitoring"
+        frequency: "Every batch, real-time during pasteurization"
+        who: "Production supervisor or designated operator"
+      correctiveActions:
+        - action: "If temperature < 72°C, continue heating until 72°C reached for 15 seconds"
+          responsibility: "Production supervisor"
+        - action: "If unable to achieve temperature, reject milk batch and document"
+          responsibility: "Production supervisor"
+        - action: "Re-pasteurize if time/temperature not met"
+          responsibility: "Production supervisor"
+      verification:
+        method: "Calibrate thermometer weekly; Review records daily"
+        frequency: "Thermometer calibration: Weekly. Records review: Daily"
+      recordKeeping:
+        formName: "Pasteurization Log"
+        retentionPeriod: "2 years minimum (per FDA/local regulations)"
+        notes: "Record batch ID, date, time, temperature, duration, operator name"
+
+    - ccpNumber: 2
+      stepNumber: 3
+      processStep: "Curd Acidification"
+      hazard: "Pathogen survival due to insufficient acidification"
+      criticalLimit:
+        parameter: PH
+        value: 5.3
+        operator: LESS_THAN
+        range:
+          max: 5.3
+      monitoringProcedure:
+        what: "pH of curd/whey"
+        how: "Calibrated pH meter"
+        frequency: "At end of cooking step, before draining"
+        who: "Cheesemaker or lab technician"
+      correctiveActions:
+        - action: "If pH > 5.3, continue incubation and re-test every 30 minutes"
+          responsibility: "Cheesemaker"
+        - action: "If pH does not drop after 2 hours, reject batch or re-inoculate with culture"
+          responsibility: "Production manager"
+        - action: "Document deviation and corrective action taken"
+          responsibility: "Cheesemaker"
+      verification:
+        method: "Calibrate pH meter daily; Lab verification of select batches"
+        frequency: "pH meter calibration: Daily. Lab testing: Weekly random samples"
+      recordKeeping:
+        formName: "pH Monitoring Log"
+        retentionPeriod: "2 years"
+        notes: "Record batch ID, pH reading, time, operator, any corrective actions"
+
+    - ccpNumber: 3
+      stepNumber: 6
+      processStep: "Aging Temperature Control"
+      hazard: "Pathogen growth (Listeria) during aging"
+      criticalLimit:
+        parameter: TEMPERATURE
+        value: 12
+        unit: "°C"
+        operator: LESS_THAN
+        range:
+          max: 12
+      monitoringProcedure:
+        what: "Aging room/cave temperature"
+        how: "Continuous data logger or manual thermometer readings"
+        frequency: "Continuous (data logger) OR every 4 hours (manual)"
+        who: "Aging room supervisor"
+      correctiveActions:
+        - action: "If temp > 12°C, adjust refrigeration immediately"
+          responsibility: "Aging room supervisor"
+        - action: "If temp exceeded for >4 hours, conduct microbiological testing"
+          responsibility: "Quality manager"
+        - action: "Evaluate cheese safety before release"
+          responsibility: "Quality manager"
+      verification:
+        method: "Review temperature logs daily; Environmental swab testing monthly"
+        frequency: "Logs: Daily. Swabs: Monthly"
+      recordKeeping:
+        formName: "Aging Room Temperature Log"
+        retentionPeriod: "2 years"
+        notes: "Continuous digital records OR manual log with date/time/temp/operator"
+
+    - ccpNumber: 4
+      processStep: "Finished Product Testing (before release)"
+      hazard: "Pathogenic bacteria in finished cheese"
+      criticalLimit:
+        parameter: OTHER
+        value: "Negative for Listeria monocytogenes, E. coli O157:H7, Salmonella"
+        operator: EQUAL
+      monitoringProcedure:
+        what: "Microbiological testing of finished cheese"
+        how: "Lab analysis (in-house or third-party certified lab)"
+        frequency: "Every batch OR statistically valid sampling plan (e.g., 10% of batches)"
+        who: "Quality assurance manager"
+      correctiveActions:
+        - action: "If positive test, hold entire lot; conduct investigation"
+          responsibility: "Quality manager"
+        - action: "Destroy affected product or re-pasteurize if possible"
+          responsibility: "Production manager"
+        - action: "Investigate root cause (HACCP failure, contamination source)"
+          responsibility: "HACCP coordinator"
+        - action: "Implement corrective measures to prevent recurrence"
+          responsibility: "Management team"
+      verification:
+        method: "Third-party lab verification quarterly; Review all test results"
+        frequency: "Quarterly independent verification"
+      recordKeeping:
+        formName: "Finished Product Testing Log"
+        retentionPeriod: "2 years minimum (or per local regulations)"
+        notes: "Batch ID, test date, lab results, pass/fail, corrective actions if failed"
+
+  prerequisitePrograms:
+    - program: "Sanitation Standard Operating Procedures (SSOP)"
+      description: "Daily cleaning and sanitizing of all food contact surfaces, equipment, and utensils using approved sanitizers"
+      frequency: "Daily before production and after each batch"
+    - program: "Good Manufacturing Practices (GMP)"
+      description: "Personnel hygiene (handwashing, clean clothing, hair nets), facility maintenance, pest control"
+      frequency: "Continuous; Personnel training quarterly"
+    - program: "Supplier Approval Program"
+      description: "Verify all milk suppliers provide pasteurized milk OR have HACCP plans; Request Certificates of Analysis"
+      frequency: "Annual supplier audits; COA with each delivery"
+    - program: "Equipment Calibration and Maintenance"
+      description: "Regular calibration of thermometers, pH meters, scales; Preventive maintenance schedule"
+      frequency: "Thermometers/pH meters: Weekly calibration. Equipment maintenance: Per manufacturer schedule"
+    - program: "Pest Control"
+      description: "Contracted pest control service; Monthly inspections and treatments"
+      frequency: "Monthly inspections; Quarterly treatments"
+    - program: "Water Quality Testing"
+      description: "If using well water, annual testing for potability; Municipal water supply verification"
+      frequency: "Annually (well water) OR verify municipal reports quarterly"
+
+  traceability:
+    lotNumberFormat: "YYMMDD-CHEESE-BATCH##"
+    requiredDocumentation:
+      - "Milk supplier invoices with lot numbers"
+      - "Pasteurization logs"
+      - "Culture supplier batch numbers"
+      - "Rennet supplier batch numbers"
+      - "pH logs"
+      - "Temperature logs (pasteurization and aging)"
+      - "Finished product test results"
+      - "Distribution records (customer, date, quantity, lot number)"
+    upstreamTracing: "One step back: Trace to specific milk supplier delivery date and farm source"
+    downstreamTracing: "One step forward: Trace to specific customer/retailer and delivery date"
+```
+
+**Guidelines:**
+
+* **For Commercial Producers**: HACCP is mandatory for regulatory compliance (FDA, USDA, EU regulations)
+* **For Home Cheesemakers**: HACCP is optional but good practice for food safety awareness
+* **Critical Control Points**: Focus on temperature (pasteurization, aging), pH (acidification), and pathogen testing
+* **Record Keeping**: Maintain detailed logs for all CCPs; retention period varies by jurisdiction (typically 2+ years)
+* **Verification**: Regular calibration of instruments, third-party testing, management review
+* **Corrective Actions**: Document all deviations and actions taken
+* **Traceability**: Essential for recall capability (trace back to ingredients, trace forward to customers)
+
+**Common Cheese CCPs:**
+1. **Pasteurization** (if using raw milk → pasteurized)
+2. **pH Control** (acidification to prevent pathogen growth)
+3. **Aging Temperature** (especially critical for soft/fresh cheeses)
+4. **Finished Product Testing** (pathogen testing before release)
+5. **Cooling Rate** (for fresh cheeses, cool to <4°C within X hours)
+
+**Regulatory References:**
+- FDA 21 CFR Part 117 (FSMA - Food Safety Modernization Act)
+- FDA Grade A Pasteurized Milk Ordinance (PMO)
+- EU Regulation (EC) No 852/2004 (Hygiene of foodstuffs)
+- Codex Alimentarius HACCP Guidelines
+
+---
+
+## 14. Production Records & Audit Documentation (Optional)
+
+Production Records section provides audit-ready documentation structure for batch tracking, quality control, and regulatory compliance.
+
+```yaml
+productionRecords:
+  batchTracking:
+    lotNumberPrefix: string  # Recipe-specific lot number prefix
+    batchNumberFormat: string  # Format template (e.g., "YYMMDD-FETA-###")
+    productionLogTemplate: string  # Name of production log form
+    requiredDataPoints:
+      - dataPoint: string  # "Milk temperature", "pH at coagulation", etc.
+        unit: string (optional)
+        acceptableRange:
+          min: number (optional)
+          max: number (optional)
+        recordingFrequency: string  # "Every batch", "Hourly", "Per step"
+
+  qualityControl:
+    inspectionPoints:
+      - stepNumber: number (optional)  # Links to recipe step
+        inspectionType: VISUAL | MEASUREMENT | SENSORY | MICROBIOLOGICAL | OTHER
+        parameter: string  # "Curd firmness", "Whey clarity", "pH", "Temperature"
+        acceptanceCriteria: string
+        rejectionCriteria: string (optional)
+        samplingPlan: string (optional)  # "100% inspection", "Random 10%", etc.
+        responsibleRole: string
+        documentationRequired: boolean
+
+    deviationManagement:
+      reportingThreshold: string  # "Any deviation", "Out of spec by >10%"
+      documentationForm: string  # "Deviation Report Form DR-001"
+      approvalRequired: boolean
+      retentionPeriod: string
+
+  regulatoryCompliance:
+    certifications:
+      - certificationType: ORGANIC | KOSHER | HALAL | PDO | PGI | GMP | HACCP | OTHER
+        certifyingBody: string
+        certificateNumber: string (optional)
+        validUntil: string (optional)  # ISO 8601 date
+        specificRequirements: [string] (optional)
+
+    labelingRequirements:
+      productName: string  # Official product name for label
+      ingredients: [string]  # Ingredient declaration order (by weight)
+      allergenStatement: string
+      nutritionFactsRequired: boolean
+      countryOfOrigin: string (optional)
+      additionalStatements: [string] (optional)  # "Contains live cultures", etc.
+
+    holdAndRelease:
+      holdPeriod: string (optional)  # "24 hours", "Until test results"
+      releaseChecklist: [string] (optional)
+      releaseAuthority: string  # "Quality Manager", "Lab Supervisor"
+
+  auditTrail:
+    criticalActions:
+      - action: string  # "Recipe approval", "Batch release", "Deviation approval"
+        requiresSignature: boolean
+        requiresTimestamp: boolean
+        requiresReason: boolean (optional)
+        approvalLevel: string  # "Supervisor", "Manager", "Quality Director"
+
+    recordRetention:
+      productionLogs: string  # "2 years", "3 years", "Indefinitely"
+      qualityRecords: string
+      deviationReports: string
+      haccpRecords: string
+      batchReleaseDocuments: string
+      complaintRecords: string (optional)
+
+  traceabilityLinks:
+    rawMaterialTracking:
+      - material: string  # "Milk", "Starter culture", "Rennet"
+        supplierRequired: boolean
+        lotNumberRequired: boolean
+        receiptDateRequired: boolean
+        certificateOfAnalysisRequired: boolean
+
+    productionEnvironment:
+      - environmentFactor: string  # "Room temperature", "Equipment ID", "Operator ID"
+        recordingRequired: boolean
+        acceptableRange: string (optional)
+```
+
+**Example:**
+
+```yaml
+productionRecords:
+  batchTracking:
+    lotNumberPrefix: "FTA"  # Feta cheese prefix
+    batchNumberFormat: "YYMMDD-FTA-###"
+    productionLogTemplate: "Feta Production Log v2.3"
+    requiredDataPoints:
+      - dataPoint: "Milk receipt temperature"
+        unit: "°C"
+        acceptableRange:
+          min: 2
+          max: 6
+        recordingFrequency: "Every milk delivery"
+
+      - dataPoint: "Pasteurization temperature"
+        unit: "°C"
+        acceptableRange:
+          min: 72
+          max: 75
+        recordingFrequency: "Continuous during pasteurization"
+
+      - dataPoint: "Coagulation pH"
+        acceptableRange:
+          min: 6.3
+          max: 6.6
+        recordingFrequency: "Every batch before rennet addition"
+
+      - dataPoint: "Curd pH at draining"
+        acceptableRange:
+          max: 5.3
+        recordingFrequency: "Every batch before draining"
+
+      - dataPoint: "Aging room temperature"
+        unit: "°C"
+        acceptableRange:
+          min: 8
+          max: 12
+        recordingFrequency: "Every 4 hours (or continuous data logger)"
+
+  qualityControl:
+    inspectionPoints:
+      - stepNumber: 2
+        inspectionType: VISUAL
+        parameter: "Milk quality upon receipt"
+        acceptanceCriteria: "No off-odors, no visible contamination, temperature 2-6°C"
+        rejectionCriteria: "Sour smell, visible particles, temperature >6°C"
+        samplingPlan: "100% sensory check, temperature of every delivery"
+        responsibleRole: "Receiving clerk or production supervisor"
+        documentationRequired: true
+
+      - stepNumber: 3
+        inspectionType: MEASUREMENT
+        parameter: "Coagulation time and clean break test"
+        acceptanceCriteria: "Clean break achieved within 45-60 minutes, whey is clear and greenish"
+        rejectionCriteria: "No clean break after 90 minutes, whey is milky"
+        samplingPlan: "Every batch"
+        responsibleRole: "Cheesemaker"
+        documentationRequired: true
+
+      - stepNumber: 6
+        inspectionType: MEASUREMENT
+        parameter: "Final curd pH"
+        acceptanceCriteria: "pH ≤ 5.3"
+        rejectionCriteria: "pH > 5.5"
+        samplingPlan: "Every batch"
+        responsibleRole: "Cheesemaker or QC technician"
+        documentationRequired: true
+
+      - stepNumber: null  # Final product
+        inspectionType: MICROBIOLOGICAL
+        parameter: "Finished product pathogen testing"
+        acceptanceCriteria: "Negative for Listeria, E. coli O157:H7, Salmonella"
+        rejectionCriteria: "Positive for any pathogen"
+        samplingPlan: "Every batch OR 10% random sampling (per approved plan)"
+        responsibleRole: "Quality Assurance Manager"
+        documentationRequired: true
+
+      - stepNumber: null
+        inspectionType: SENSORY
+        parameter: "Finished product taste and texture evaluation"
+        acceptanceCriteria: "Crumbly texture, salty-tangy flavor, white color, no off-flavors"
+        rejectionCriteria: "Slimy texture, bitter taste, off-odors"
+        samplingPlan: "Every batch"
+        responsibleRole: "Cheesemaker or QC panel"
+        documentationRequired: true
+
+    deviationManagement:
+      reportingThreshold: "Any deviation from critical limits (pH, temperature) OR quality defect affecting >10% of batch"
+      documentationForm: "Deviation Report Form DR-001"
+      approvalRequired: true
+      retentionPeriod: "3 years minimum"
+
+  regulatoryCompliance:
+    certifications:
+      - certificationType: ORGANIC
+        certifyingBody: "USDA National Organic Program"
+        certificateNumber: "ORG-12345"
+        validUntil: "2026-12-31"
+        specificRequirements:
+          - "Use only certified organic milk from approved suppliers"
+          - "No synthetic additives or preservatives"
+          - "Maintain organic separation from non-organic products"
+
+      - certificationType: HACCP
+        certifyingBody: "Internal HACCP Plan (FDA FSMA compliant)"
+        specificRequirements:
+          - "Follow HACCP plan version 3.2 dated 2025-01-15"
+          - "Monitor all CCPs per HACCP schedule"
+          - "Conduct annual HACCP plan review"
+
+    labelingRequirements:
+      productName: "Traditional Greek-Style Feta Cheese"
+      ingredients:
+        - "Pasteurized sheep milk"
+        - "Salt"
+        - "Cheese cultures"
+        - "Microbial rennet"
+      allergenStatement: "Contains: Milk. May contain traces of lactose."
+      nutritionFactsRequired: true
+      countryOfOrigin: "Made in USA"
+      additionalStatements:
+        - "Keep refrigerated"
+        - "Best when stored in brine"
+        - "Contains live and active cultures"
+
+    holdAndRelease:
+      holdPeriod: "48 hours minimum (until microbiological test results available)"
+      releaseChecklist:
+        - "All production records complete and signed"
+        - "HACCP CCP monitoring records reviewed and approved"
+        - "pH test results within specification (≤5.3)"
+        - "Microbiological test results negative for pathogens"
+        - "Sensory evaluation passed"
+        - "Lot number applied to all packages"
+        - "Temperature during hold period maintained at 4-10°C"
+      releaseAuthority: "Quality Assurance Manager"
+
+  auditTrail:
+    criticalActions:
+      - action: "Recipe approval or modification"
+        requiresSignature: true
+        requiresTimestamp: true
+        requiresReason: true
+        approvalLevel: "Quality Director and Production Manager"
+
+      - action: "Batch production start"
+        requiresSignature: true
+        requiresTimestamp: true
+        requiresReason: false
+        approvalLevel: "Production Supervisor"
+
+      - action: "Deviation from CCP critical limit"
+        requiresSignature: true
+        requiresTimestamp: true
+        requiresReason: true
+        approvalLevel: "Production Supervisor (immediate); Quality Manager (final approval)"
+
+      - action: "Batch release for distribution"
+        requiresSignature: true
+        requiresTimestamp: true
+        requiresReason: false
+        approvalLevel: "Quality Assurance Manager"
+
+      - action: "Batch rejection or disposal"
+        requiresSignature: true
+        requiresTimestamp: true
+        requiresReason: true
+        approvalLevel: "Quality Manager and Production Manager"
+
+    recordRetention:
+      productionLogs: "3 years from production date"
+      qualityRecords: "3 years from production date"
+      deviationReports: "5 years from incident date"
+      haccpRecords: "2 years minimum (per FDA); 3 years recommended"
+      batchReleaseDocuments: "3 years from release date"
+      complaintRecords: "5 years from complaint date"
+
+  traceabilityLinks:
+    rawMaterialTracking:
+      - material: "Sheep milk"
+        supplierRequired: true
+        lotNumberRequired: true
+        receiptDateRequired: true
+        certificateOfAnalysisRequired: true  # Organic cert, pasteurization cert, pathogen testing
+
+      - material: "Mesophilic starter culture"
+        supplierRequired: true
+        lotNumberRequired: true
+        receiptDateRequired: true
+        certificateOfAnalysisRequired: true  # Supplier COA with activity test
+
+      - material: "Microbial rennet"
+        supplierRequired: true
+        lotNumberRequired: true
+        receiptDateRequired: true
+        certificateOfAnalysisRequired: false
+
+      - material: "Sea salt (food grade)"
+        supplierRequired: true
+        lotNumberRequired: true
+        receiptDateRequired: true
+        certificateOfAnalysisRequired: false
+
+    productionEnvironment:
+      - environmentFactor: "Aging cave/room identifier"
+        recordingRequired: true
+        acceptableRange: "Cave 1, 2, or 3 only (temperature-controlled)"
+
+      - environmentFactor: "Primary cheesemaker operator ID"
+        recordingRequired: true
+
+      - environmentFactor: "Equipment sanitization completion"
+        recordingRequired: true
+        acceptableRange: "Sanitization log completed within 2 hours before production start"
+```
+
+**Guidelines:**
+
+* **For Regulatory Audits**: This section provides all documentation requirements for FDA, USDA, EU, or other regulatory inspections
+* **For Certification Bodies**: Organic, Kosher, Halal certifiers can verify compliance from recipe-level requirements
+* **For Quality Management Systems**: Integrates with ISO 9001, SQF, BRC, FSSC 22000 documentation requirements
+* **For Traceability**: Enables one-up/one-down traceability for recall situations
+* **For Legal Defense**: Documented due diligence in case of product liability claims
+
+**Audit-Ready Data Fields Summary:**
+
+1. **Batch Tracking** - Lot numbers, production logs, required data points
+2. **Quality Control** - Inspection points, acceptance criteria, sampling plans
+3. **Deviation Management** - How to handle and document out-of-spec situations
+4. **Regulatory Compliance** - Certifications, labeling, hold-and-release procedures
+5. **Audit Trail** - Who approved what, when, and why (signature requirements)
+6. **Record Retention** - How long to keep each type of record (varies by regulation)
+7. **Traceability** - Raw material tracking, production environment documentation
+
+**Integration with HACCP:**
+- Production Records complement HACCP by adding QC, regulatory, and audit requirements
+- HACCP focuses on food safety CCPs
+- Production Records cover broader quality, compliance, and traceability needs
+
+---
+
+## 15. Media Attachments (Optional)
 
 Media section links photos, videos, and other visual aids.
 
@@ -415,7 +1016,7 @@ media:
 
 ---
 
-## 14. Recipe Variations (Optional)
+## 16. Recipe Variations (Optional)
 
 Variations section documents alternative versions of the recipe.
 
@@ -474,7 +1075,7 @@ variations:
 
 ---
 
-## 15. Scaling Guidance (Optional)
+## 17. Scaling Guidance (Optional)
 
 Scaling section provides guidelines for adjusting recipe batch sizes.
 
@@ -530,7 +1131,7 @@ scaling:
 
 ---
 
-## 16. Metadata & Multi-Language Support (Optional)
+## 18. Metadata & Multi-Language Support (Optional)
 
 Metadata section supports multiple languages and additional context.
 
@@ -589,7 +1190,7 @@ metadata:
 
 ---
 
-## 17. Enhanced Validation
+## 19. Enhanced Validation
 
 The validation section in steps has been enhanced to support more detailed quality checks.
 
@@ -641,7 +1242,7 @@ validation:
 
 ---
 
-## 18. Complete Example
+## 20. Complete Example
 
 ```yaml
 spec: OCRS/1.0
@@ -695,7 +1296,7 @@ finalProduct:
 
 ---
 
-## 19. Compliance Levels
+## 21. Compliance Levels
 
 OCRS defines three compliance levels to accommodate different use cases:
 
@@ -730,6 +1331,7 @@ A Level 3 compliant recipe includes Level 2 requirements plus:
 * `finalProduct` section completed
 * `equipment` section listing required tools
 * `safety.allergens` specified
+* `haccp.criticalControlPoints` defined for commercial production (if applicable)
 
 ### Validation
 
@@ -774,7 +1376,7 @@ x-myapp:
 
 ---
 
-## 20. Implementation Guidelines
+## 22. Implementation Guidelines
 
 ### For Application Developers
 
@@ -808,6 +1410,8 @@ interface OCRSRecipe {
   equipment?: Equipment;
   cost?: Cost;
   safety?: Safety;
+  haccp?: HACCP;
+  productionRecords?: ProductionRecords;
   media?: Media;
   variations?: Variation[];
   scaling?: Scaling;
@@ -858,7 +1462,7 @@ function parseOCRS(yaml: string): OCRSRecipe {
 
 ---
 
-## 21. License
+## 23. License
 
 This specification is released under **Creative Commons Attribution 4.0 (CC-BY 4.0)**.
 
@@ -871,7 +1475,7 @@ Anyone may use, extend, and implement this specification with attribution.
 
 ---
 
-## 22. Governance
+## 24. Governance
 
 OCRS is community-maintained. Changes are proposed via public discussion and accepted through versioned releases.
 
@@ -894,7 +1498,7 @@ To propose changes or additions:
 
 ---
 
-## 23. Appendix: Quick Reference
+## 25. Appendix: Quick Reference
 
 ### Required Fields (Level 1)
 
@@ -954,6 +1558,8 @@ equipment:
   required: [...]
 safety:
   allergens: [...]
+haccp:
+  criticalControlPoints: [...]  # For commercial production
 ```
 
 ### Enumerations Quick Reference
@@ -973,6 +1579,16 @@ safety:
 **Allergen:** MILK, LACTOSE, NUTS, SOY, EGGS, GLUTEN, OTHER
 
 **Platform:** YOUTUBE, VIMEO, OTHER
+
+**HACCP Severity:** LOW, MEDIUM, HIGH, CRITICAL
+
+**HACCP Parameter:** TEMPERATURE, PH, TIME, WEIGHT, AW (water activity), OTHER
+
+**HACCP Operator:** EQUAL, LESS_THAN, GREATER_THAN, BETWEEN, NOT_EQUAL
+
+**Inspection Type:** VISUAL, MEASUREMENT, SENSORY, MICROBIOLOGICAL, OTHER
+
+**Certification Type:** ORGANIC, KOSHER, HALAL, PDO, PGI, GMP, HACCP, OTHER
 
 ---
 
